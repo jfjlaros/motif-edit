@@ -1,9 +1,7 @@
-MOTIF_F := 'A[AGT]TAAA.{12,17}GG'
-MOTIF_R := 'CC.{12,17}TTTA[TCA]T'
-BUILD := hg38
-OUT := sites sites_start pas pas_start intersect
-#OUT := intersect
+MOTIF_F := 'A[AT]TAAA.{12,17}GG'
+MOTIF_R := 'CC.{12,17}TTTA[TA]T'
 
+BUILD := hg38
 REFERENCE := $(BUILD).fa
 SIZES := $(BUILD).chrom.sizes
 ANNOTATION := gencode.v35.polyAs.gff3.gz
@@ -14,6 +12,7 @@ SIZES_URL := https://hgdownload.cse.ucsc.edu/goldenPath/$(BUILD)/bigZips/$(SIZES
 ANNOTAION_URL := ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_35/$(ANNOTATION)
 
 STRAND := f r
+OUT := intersect # sites sites_start ann ann_start
 
 
 OUT_FILES := \
@@ -23,7 +22,7 @@ OUT_FILES := \
         $(addsuffix _$S.bed, $O))))
 
 
-.PHONY: all clean distclean
+.PHONY: all clean distclean features
 
 
 all: $(OUT_FILES)
@@ -33,6 +32,9 @@ clean:
 
 distclean: clean
 	rm -f $(REFERENCE) $(SIZES) $(ANNOTATION)
+
+features: $(ANNOTATION)
+	zgrep -v '^#' $(ANNOTATION) | cut -f 3 | sort -u
 
 
 $(REFERENCE):
@@ -48,10 +50,10 @@ $(ANNOTATION):
 %.bed: %.raw
 	echo 'track name=$@' > $@ && cat $< >> $@
 
-%_intersect_f.raw: %_sites_start_f.raw %_pas_start_f.raw
+%_intersect_f.raw: %_sites_start_f.raw %_ann_start_f.raw
 	bedtools intersect -a $< -b $(word 2, $^) > $@
 
-%_intersect_r.raw: %_sites_start_r.raw %_pas_start_r.raw
+%_intersect_r.raw: %_sites_start_r.raw %_ann_start_r.raw
 	bedtools intersect -a $< -b $(word 2, $^) > $@
 
 %_start_f.raw: %_f.raw
@@ -66,11 +68,11 @@ $(ANNOTATION):
 %_sites_r.raw: $(REFERENCE)
 	fastools famotif2bed $< $@ $(MOTIF_R)
 
-%_pas_f.raw: %_PAS.bed $(SIZES)
+%_ann_f.raw: %_ann.bed $(SIZES)
 	bedtools slop -i $< -g $(word 2, $^) -l 1 -r 0 | grep '+' | cut -f -3 > $@
 
-%_pas_r.raw: %_PAS.bed $(SIZES)
+%_ann_r.raw: %_ann.bed $(SIZES)
 	bedtools slop -i $< -g $(word 2, $^) -l 1 -r 0 | grep '-' | cut -f -3 > $@
 
-%_PAS.bed: $(ANNOTATION)
+%_ann.bed: $(ANNOTATION)
 	zgrep $(FILTER) $(ANNOTATION) | cut -f 1,4,5,7 > $@
