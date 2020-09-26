@@ -7,9 +7,17 @@ REFERENCE := input/$(REF).fa
 PAS := input/$(REF)_PASs_reduced.txt
 GENOME := input/hg38.genome
 OUT := sites sites_start pas pas_start intersect
+STRAND := f r
 
 
-all: $(foreach O, $(OUT), $(foreach S, f r, $(addprefix $(REF)_, $(addsuffix _$S.bed, $O))))
+OUT_FILES := \
+  $(foreach O, $(OUT), \
+    $(foreach S, $(STRAND), \
+      $(addprefix $(REF)_, \
+        $(addsuffix _$S.bed, $O))))
+
+
+all: $(OUT_FILES)
 
 %.bed: %.raw
 	echo 'track name=$@' > $@ && cat $< >> $@
