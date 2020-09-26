@@ -1,23 +1,27 @@
 # workon fastools
 
-MOTIF_F := 'A[AT]TAAA.{12,17}GG'
-MOTIF_R := 'CC.{12,17}TTTA[TA]T'
-REF := hg38
-REFERENCE := input/$(REF).fa
-PAS := input/$(REF)_PAS.bed
-SIZES := input/hg38.chrom.sizes
+MOTIF_F := 'A[AGT]TAAA.{12,17}GG'
+MOTIF_R := 'CC.{12,17}TTTA[TCA]T'
+BUILD := hg38
 OUT := sites sites_start pas pas_start intersect
+
+REFERENCE := input/$(BUILD).fa
+SIZES := input/$(BUILD).chrom.sizes
+PAS := input/hg38_PAS.bed
 STRAND := f r
 
 
 OUT_FILES := \
   $(foreach O, $(OUT), \
     $(foreach S, $(STRAND), \
-      $(addprefix $(REF)_, \
+      $(addprefix $(BUILD)_, \
         $(addsuffix _$S.bed, $O))))
 
 
 all: $(OUT_FILES)
+
+clean:
+	rm -f $(OUT_FILES)
 
 %.bed: %.raw
 	echo 'track name=$@' > $@ && cat $< >> $@
