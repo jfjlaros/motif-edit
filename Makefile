@@ -2,10 +2,10 @@
 
 MOTIF_F := 'A[AT]TAAA.{12,17}GG'
 MOTIF_R := 'CC.{12,17}TTTA[TA]T'
-REF := chr1
+REF := hg38
 REFERENCE := input/$(REF).fa
-PAS := input/$(REF)_PASs_reduced.txt
-GENOME := input/hg38.genome
+PAS := input/$(REF)_PAS.bed
+SIZES := input/hg38.chrom.sizes
 OUT := sites sites_start pas pas_start intersect
 STRAND := f r
 
@@ -34,10 +34,10 @@ all: $(OUT_FILES)
 %_sites_r.raw: $(REFERENCE)
 	fastools famotif2bed $< $@ $(MOTIF_R)
 
-%_pas_f.raw: $(PAS) $(GENOME)
+%_pas_f.raw: $(PAS) $(SIZES)
 	bedtools slop -i $< -g $(word 2, $^) -l 1 -r 0 | grep '+' | cut -f -3 > $@
 
-%_pas_r.raw: $(PAS) $(GENOME)
+%_pas_r.raw: $(PAS) $(SIZES)
 	bedtools slop -i $< -g $(word 2, $^) -l 1 -r 0 | grep '-' | cut -f -3 > $@
 
 %_intersect_f.raw: %_sites_start_f.raw %_pas_start_f.raw
