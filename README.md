@@ -1,6 +1,10 @@
 # Motif editing
 
-Originally designed for editing poly(A) sites.
+We present a procedure that searches for the locations of a motif in a
+reference sequence and intersects these locations with a list of genomic
+feature locations.
+
+Originally, this was designed for finding editable poly(A) signals.
 
 ## Installation
 
@@ -10,6 +14,9 @@ The dependencies can be installed with the following commands.
     sudo pip install fastools
 
 Alternatively, `fastools` can be installed in a virtual environment.
+
+    mkvirtualenv fastools
+    pip install fastools
 
 The source can be retrieved with the following command.
 
@@ -54,3 +61,7 @@ A feature is selected by setting the `FILTER` variable. The following command
 can be used to retrieve a list of features.
 
     make features
+
+To get a list of reference data locations, the following command can be used.
+
+    make reference
