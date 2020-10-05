@@ -36,13 +36,12 @@ OUT_FILES := \
       $(addprefix $(BUILD)_, \
         $(addsuffix _$S.bed, $O))))
 
-# Target configuration.
-.PHONY: all clean distclean features reference
-
 
 #
 # Maintenance targets.
 #
+
+.PHONY: all clean distclean features reference
 
 all: $(OUT_FILES)
 
