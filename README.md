@@ -10,7 +10,7 @@ Originally, this was designed for finding editable poly(A) signals.
 
 The dependencies can be installed with the following commands.
 
-    sudo apt install bedtools gzip make sed wget
+    sudo apt install awk bedtools gzip make wget
     sudo pip install fastools
 
 Alternatively, `fastools` can be installed in a virtual environment.
@@ -24,6 +24,19 @@ The source can be retrieved with the following command.
     cd motif-edit
 
 ## Analysis
+
+The *motif* can be modified by editing `motifs.tsv`. This file contains four
+tab separated lines.
+
+| name | description
+|:--   |:--
+| `+f` | Forward motif on the forward strand.
+| `-r` | Reverse complement motif on the reverse complement strand.
+| `+r` | Forward motif on the reverse complement strand.
+| `-f` | Reverse motif on the forward strand.
+
+For the format of the motifs, see the page on
+[extended regular expressions](https://docs.python.org/3/library/re.html).
 
 The analysis is executed using the `make` command. If no reference data is
 found, it will be downloaded on the first run.
@@ -47,11 +60,6 @@ activated before starting the analysis.
 ## Configuration
 
 Configuration is done by setting variables at the top of the `Makefile`.
-
-The *motif* can be modified by setting variables `MOTIF_F` and `MOTIF_R` for
-the forward and reverse strand respectively. For the format of these values,
-see the page on
-[extended regular expressions](https://en.wikibooks.org/wiki/Regular_Expressions/POSIX-Extended_Regular_Expressions).
 
 The build version is specified by setting the `BUILD` variable. When this
 setting is changed, it is probably necessary to change `ANNOTATION` and

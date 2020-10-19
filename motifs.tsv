@@ -1,0 +1,4 @@
++f	(?=ATTAAA.{12,17}GG)
+-r	(?<=CC.{12,17})(?=TTTAAT)
++r	(?<=CC.{13,17})(?=ATTAAA)
+-f	(?=TTTAAT.{13,17}GG)
