@@ -17,19 +17,18 @@ ANNOTATION_URL := ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/releas
 BEDTOOLS := bedtools
 FASTOOLS := fastools
 
-OUT_FILES := motif_+f.bed motif_-r.bed motif_+r.bed motif_-f.bed annotation_-.bed annotation_+.bed intersect_+f.bed intersect_-r.bed intersect_+r.bed intersect_-f.bed
-
 
 #
 # Maintenance targets.
 #
 
 .PHONY: all clean distclean features reference
+.SECONDARY:
 
-all: $(OUT_FILES)
+all: sum_a.bed sum_t.bed sum.bed
 
 clean:
-	rm -f $(OUT_FILES)
+	rm -f *.raw *.bed
 
 distclean: clean
 	rm -f $(REFERENCE) $(ANNOTATION)
@@ -62,12 +61,21 @@ $(ANNOTATION):
 %.bed: %.raw
 	echo 'track name=$*' > $@ && cat $< >> $@
 
-# Intersect motifs and annotation (forward strand).
-intersect_%f.raw: motif_%f.raw annotation_%.raw
-	$(BEDTOOLS) intersect -a $< -b $(word 2, $^) > $@
+# Merge raw files.
+sum.raw: sum_a.raw sum_t.raw
+sum_a.raw: intersect_+f.raw intersect_-r.raw
+sum_t.raw: intersect_+r.raw intersect_-f.raw
 
-# Intersect motifs and annotation (reverse complement strand).
-intersect_%r.raw: motif_%r.raw annotation_%.raw
+sum.raw sum_a.raw sum_t.raw:
+	cat $^ | sort -k 1,1 -k 2,2n -u > $@
+
+# Intersect motifs with annotation.
+intersect_+f.raw: motif_+f.raw annotation_+.raw
+intersect_-f.raw: motif_-f.raw annotation_-.raw
+intersect_+r.raw: motif_+r.raw annotation_+.raw
+intersect_-r.raw: motif_-r.raw annotation_-.raw
+
+intersect_+f.raw intersect_-r.raw intersect_+r.raw intersect_-f.raw:
 	$(BEDTOOLS) intersect -a $< -b $(word 2, $^) > $@
 
 # Find motif sites.
