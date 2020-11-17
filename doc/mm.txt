@@ -1,12 +1,20 @@
-In order to find editable poly(A) signals, we have constructed a regular
-expression that combines the two canonical poly(A) signals with candidate CRIPR
-sites while taking the size of the CRISPR editing window and fact that editing
-any of the last three adenines in the poly(A) signal will have the desired
-result into account. This regular expression was used to find all matching
-patterns in the human reference genome GRCh38 [1], a similar approach was used
-to find all occurrences on the reverse complement strand.
-The results of this search were intersected with a list of known poly(A)
-signals [2] to obtain the final list of editable poly(A) signals.
+Genome-wide detection of editable polyadenylation signals
+
+A polyadenylation signal can be edited in two ways; either by modification of
+the conserved adenines directly, or by modification of the conserved thymines
+on the reverse complement strand.
+
+In order to find all editable polyadenylation signals for the canonical motifs
+AATAAA and ATTAAA, we have constructed a pair of regular expressions for each of
+these motifs that combines the polyadenylation signal motif sequence with a PAM
+site for SpCas9 (5’-NGG-3’) at the appropriate distance from the targeted
+adenines so that they fall in the activity window of SpABEmax24.
+
+This pair of regular expressions was used to find all matching patterns in the
+human reference genome GRCh38 [1], a similar approach was used to find all
+occurrences on the reverse complement strand. The results of this search were
+intersected with a list of known polyadenylation signals [2] to obtain the
+final list of editable polyadenylation signals.
 
 We used the `famotif2bed` subcommand of the Fastools [3] package (version
 1.0.2) for finding patterns in a reference sequence using regular expressions.
