@@ -17,7 +17,7 @@ REFSEQ_URL := ftp://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/ncbiRefSeq.
 BEDTOOLS := bedtools
 FASTOOLS := fastools
 LOVD_TO_RAW := python lovd_to_raw.py
-
+ANNOTATE := python annotate.py
 
 #
 # Maintenance targets.
@@ -29,7 +29,7 @@ LOVD_TO_RAW := python lovd_to_raw.py
 all: motif_C.bed motif_G.bed \
      lovd_C.bed clinvar_C.vcf lovd_G.bed clinvar_G.vcf \
      intersect_lovd_C.bed intersect_lovd_G.bed \
-     intersect_clinvar_C.bed intersect_clinvar_G.bed
+	 intersect_clinvar_C.csv intersect_clinvar_G.csv
 
 clean:
 	rm -f *.mtf *.raw *.bed *.vcf
@@ -79,3 +79,8 @@ lovd_%.raw: $(LOVD_VAR)
 clinvar_%.vcf: $(CLIN_VAR)
 	grep '^#' $(CLIN_VAR) > $@ && grep -v '^#' $< | sed 's/^/chr/' | \
     grep '^\S*	\S*	\S*	$(shell grep -- "^$*" $(MOTIFS) | cut -f 1-2)	.*\(Likely_p\|P\)athogenic' >> $@
+
+# Annotated variants from clinvar
+intersect_clinvar_%.csv: intersect_clinvar_%.bed
+	@ echo "$(ANNOTATE) $< $(shell grep -- "^$*" $(MOTIFS) | cut -f 1-2) DISGENET_USER DISGENET_PASSWORD -o $@"
+	@$(ANNOTATE) $< $(shell grep -- "^$*" $(MOTIFS) | cut -f 1-2) $(DISGENET_USER) $(DISGENET_PASSWORD) -o $@
