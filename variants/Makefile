@@ -32,7 +32,7 @@ all: motif_C.bed motif_G.bed \
 	 intersect_clinvar_C.csv intersect_clinvar_G.csv
 
 clean:
-	rm -f *.mtf *.raw *.bed *.vcf
+	rm -f *.mtf *.raw *.bed *.vcf intersect*.csv
 
 distclean: clean
 	rm -f $(REFERENCE)
