@@ -29,7 +29,8 @@ ANNOTATE := python annotate.py
 all: motif_C.bed motif_G.bed \
      lovd_C.bed clinvar_C.vcf lovd_G.bed clinvar_G.vcf \
      intersect_lovd_C.csv intersect_lovd_G.csv \
-	 intersect_clinvar_C.csv intersect_clinvar_G.csv
+	 intersect_clinvar_C.csv intersect_clinvar_G.csv \
+	 merged.csv
 
 clean:
 	rm -f *.mtf *.raw *.bed *.vcf intersect*.csv
@@ -80,12 +81,19 @@ clinvar_%.vcf: $(CLIN_VAR)
 	grep '^#' $(CLIN_VAR) > $@ && grep -v '^#' $< | sed 's/^/chr/' | \
     grep '^\S*	\S*	\S*	$(shell grep -- "^$*" $(MOTIFS) | cut -f 1-2)	.*\(Likely_p\|P\)athogenic' >> $@
 
-# Annotate variants from clinvar
-intersect_clinvar_%.csv: intersect_clinvar_%.bed
+space = $(eval) $(eval)
+# Merge variants from clinvar and lovd by the edit site, since those can
+# overlap
+merged_%.bed: intersect_lovd_%.bed intersect_clinvar_%.bed
+	bedtools merge -i $(subst  $(space), -i ,$?) > $@
+
+# Annotate merged variants by edit site, this way we query disgenet only once
+# for each variant
+merged_%.csv: merged_%.bed
 	@ echo "$(ANNOTATE) $< $(shell grep -- "^$*" $(MOTIFS) | cut -f 1-2) DISGENET_USER DISGENET_PASSWORD -o $@"
 	@$(ANNOTATE) $< $(shell grep -- "^$*" $(MOTIFS) | cut -f 1-2) $(DISGENET_USER) $(DISGENET_PASSWORD) -o $@
 
-# Annotate variants from LOVD
-intersect_lovd_%.csv: intersect_lovd_%.bed
-	@ echo "$(ANNOTATE) $< $(shell grep -- "^$*" $(MOTIFS) | cut -f 1-2) DISGENET_USER DISGENET_PASSWORD -o $@"
-	@$(ANNOTATE) $< $(shell grep -- "^$*" $(MOTIFS) | cut -f 1-2) $(DISGENET_USER) $(DISGENET_PASSWORD) -o $@
+# Merge both C and G variants, this can be done easily, since they are
+# guaranteed to not overlap
+merged.csv: merged_C.csv merged_G.csv
+	head -n 1 $< > $@ && cat $? | sort -k 1,1 -k 2,2n >> $@
