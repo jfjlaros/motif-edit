@@ -104,6 +104,9 @@ def splice_site_to_bed(exon):
 
 
 def main(args):
+    # The splice sites for skippable exons, in bed format
+    skip_sites = set()
+
     for transcript, exons in gtf_by_transcript(args.gtf):
         # For debuggin, we only look at DMT
         if transcript != 'DMD-203':
@@ -113,16 +116,12 @@ def main(args):
         ts = [exon_size(exon) for exon in exons]
         for to_skip in skippable_exons(ts):
             for index in to_skip:
-                print(splice_site_to_bed(exons[index]))
-        exit()
-        for exon in exons:
-            attr = exon['attribute']
-            number = attr.get('exon_number')
-            size = exon_size(exon)
-            assert size > 0
-            print(f'{transcript}:{number}\t{size}\t{size%3}')
-        print('-'*20)
-        #print(json.dumps(exons, indent=True))
+                skip_sites.add(splice_site_to_bed(exons[index]))
+
+    # Print the skippable splice sites, in bed format. Using the default python
+    # sort on tuples gives a valid sorting for bed files
+    for region in sorted(skip_sites):
+        print(*region, sep='\t', file=args.bed)
 
 def parse_attribute(attribute):
     """ attribute - A semicolon-separated list of tag-value pairs """
@@ -154,6 +153,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--gtf', type=argparse.FileType('r'), required=True)
+    parser.add_argument('--bed', type=argparse.FileType('w'), required=True)
 
     args = parser.parse_args()
 
