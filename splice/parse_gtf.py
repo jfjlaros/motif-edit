@@ -104,7 +104,7 @@ def splice_site_to_bed(exon):
 
     # The name is the transcript name + the exon number
     attr = exon['attribute']
-    ts_name = attr.get('transcript_id')
+    ts_name = attr['transcript_id']
     exon_nr = attr['exon_number']
     name = f'{ts_name}:{exon_nr}'
     return (f'chr{chrom}', begin, end, name)
@@ -114,7 +114,10 @@ def write_tsv(exons, header, handle):
     # Most of the data we need is present in every exon
     exon = exons[0]
 
-    data = {x:exon['attribute'].get(x) for x in header}
+    # Exons is a custom field, not from the GTF
+    from_gtf = [field for field in header if field != 'exons']
+
+    data = {x:exon['attribute'][x] for x in from_gtf}
     data['exons'] = ';'.join((exon['attribute']['exon_number'] for exon in exons))
     print(*(data[x] for x in header), sep='\t', file=handle)
 
@@ -123,7 +126,8 @@ def main(args):
     skip_sites = set()
 
     # Write the header for the tsv file
-    header = ['gene_name', 'transcript_id', 'gene_id', 'transcript_id', 'exons']
+    header = ['transcript_id', 'gene_id', 'transcript_id', 'exons']
+
     print(*header, sep='\t', file=args.tsv)
 
     for transcript, exons in gtf_by_transcript(args.gtf):
