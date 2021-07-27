@@ -53,10 +53,7 @@ $(GTF):
 #
 
 # Find the splice sites
-splice.bed: $(GTF)
-	$(PARSE_GTF) --gtf $? --bed splice.bed --tsv splice.tsv
-
-splice.tsv: $(GTF)
+%.bed %.tsv: $(GTF)
 	$(PARSE_GTF) --gtf $? --bed splice.bed --tsv splice.tsv
 
 # Find motif sites.
