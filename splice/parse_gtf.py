@@ -80,6 +80,29 @@ def skippable_exons(exons):
                 break
 
 
+def splice_site_to_bed(exon):
+    """ Return the splice acceptor site for exon, in bed format
+
+
+    We assume the 5-bp motif as shown in Figure one of https://doi.org/10.1186/s13059-018-1482-5
+
+    """
+    #print(json.dumps(exon, indent=True))
+    chrom = exon['seqname']
+
+    # gtf is 1 based, while bed is 0 based
+    # And the splice acceptor site starts 2bp before the exon itself
+    begin = int(exon['start']) - 3
+
+    # The splice acceptor site is 5 bp, see reference above
+    end = begin + 5
+
+    # The name is the transcript name + the exon number
+    attr = exon['attribute']
+    name = f'{attr["transcript_name"]}:{attr["exon_number"]}'
+    return (chrom, begin, end, name)
+
+
 def main(args):
     for transcript, exons in gtf_by_transcript(args.gtf):
         # For debuggin, we only look at DMT
@@ -88,9 +111,9 @@ def main(args):
 
         # Represent a transcript as a string of exon lenghts
         ts = [exon_size(exon) for exon in exons]
-        for s in skippable_exons(ts):
-            # Increment by one, since gtf counts exons starting from 1
-            print(f'Skippable: {[x+1 for x in s]}')
+        for to_skip in skippable_exons(ts):
+            for index in to_skip:
+                print(splice_site_to_bed(exons[index]))
         exit()
         for exon in exons:
             attr = exon['attribute']
