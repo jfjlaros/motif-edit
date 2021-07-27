@@ -103,9 +103,21 @@ def splice_site_to_bed(exon):
     return (chrom, begin, end, name)
 
 
+def write_tsv(exons, header, handle):
+    # Most of the data we need is present in every exon
+    exon = exons[0]
+
+    data = {x:exon['attribute'].get(x) for x in header}
+    data['exons'] = ';'.join((exon['attribute']['exon_number'] for exon in exons))
+    print(*(data[x] for x in header), sep='\t', file=handle)
+
 def main(args):
     # The splice sites for skippable exons, in bed format
     skip_sites = set()
+
+    # Write the header for the tsv file
+    header = ['gene_name', 'transcript_name', 'gene_id', 'transcript_id', 'exons']
+    print(*header, sep='\t', file=args.tsv)
 
     for transcript, exons in gtf_by_transcript(args.gtf):
         # For debuggin, we only look at DMT
@@ -115,8 +127,12 @@ def main(args):
         # Represent a transcript as a string of exon lenghts
         ts = [exon_size(exon) for exon in exons]
         for to_skip in skippable_exons(ts):
+            # Add the splice sites in bed format to skip_sites
             for index in to_skip:
                 skip_sites.add(splice_site_to_bed(exons[index]))
+            # Write the exons to the tsv file
+            skip = [exons[x] for x in to_skip]
+            write_tsv(skip, header, args.tsv)
 
     # Print the skippable splice sites, in bed format. Using the default python
     # sort on tuples gives a valid sorting for bed files
@@ -154,6 +170,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--gtf', type=argparse.FileType('r'), required=True)
     parser.add_argument('--bed', type=argparse.FileType('w'), required=True)
+    parser.add_argument('--tsv', type=argparse.FileType('w'), required=True)
 
     args = parser.parse_args()
 
