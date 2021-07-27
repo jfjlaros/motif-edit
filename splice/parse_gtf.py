@@ -99,8 +99,10 @@ def splice_site_to_bed(exon):
 
     # The name is the transcript name + the exon number
     attr = exon['attribute']
-    name = f'{attr["transcript_name"]}:{attr["exon_number"]}'
-    return (chrom, begin, end, name)
+    ts_name = attr.get('transcript_name')
+    exon_nr = attr['exon_number']
+    name = f'{ts_name}:{exon_nr}'
+    return (f'chr{chrom}', begin, end, name)
 
 
 def write_tsv(exons, header, handle):
@@ -120,12 +122,9 @@ def main(args):
     print(*header, sep='\t', file=args.tsv)
 
     for transcript, exons in gtf_by_transcript(args.gtf):
-        # For debuggin, we only look at DMT
-        if transcript != 'DMD-203':
-            continue
-
         # Represent a transcript as a string of exon lenghts
         ts = [exon_size(exon) for exon in exons]
+
         for to_skip in skippable_exons(ts):
             # If there are too many exons to skip, continue
             if len(to_skip) > args.max_skip:
