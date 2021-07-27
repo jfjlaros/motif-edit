@@ -31,9 +31,10 @@ def gtf_by_transcript(gtf):
     for record in parse_gtf(args.gtf):
         if record['feature'] == 'exon':
             # If we find a new transcript
-            if transcript_name !=  record['attribute']['transcript_name']:
+            current_transcript = record['attribute'].get('transcript_name')
+            if transcript_name !=  current_transcript:
                 yield transcript_name, records
-                transcript_name = record['attribute']['transcript_name']
+                transcript_name = current_transcript
                 records = [record]
             else:
                 records.append(record)
@@ -41,12 +42,56 @@ def gtf_by_transcript(gtf):
     else:
         yield transcript_name, records
 
-import sys
+
+def skippable_exons(exons):
+    """ Determine which exon(s) can be skipped
+
+    For each exon (except the first and second, which cannot be skipped), we
+    want to find the minimum number of exons which together have a size that
+    can be divided by 3.
+    >>> list(skippable_exons([30]))
+    []
+    >>> list(skippable_exons([30,30]))
+    []
+    >>> list(skippable_exons([30,30,30]))
+    [[1]]
+    >>> list(skippable_exons([30,30,30,30]))
+    [[1], [2]]
+    >>> list(skippable_exons([30,31,32,30]))
+    [[1, 2]]
+    >>> list(skippable_exons([30,32,32,30]))
+    []
+
+    """
+    # If there are less than 3 exons, there is nothing to skip
+    if len(exons) < 3:
+        return []
+
+    # We check every exon that isn't the first or the last
+    for i in range(1,len(exons)):
+        # Test every sub-sequence of exons, starting from the current exon
+        for j in range(i+1, len(exons)):
+            # Determine the total lenght of the exons we are considering
+            total_length = sum(exons[i:j])
+            if total_length%3 == 0:
+                yield list(range(i,j))
+                # Once we found the minimum number of exons to skip to stay in
+                # frame (can be 1), we are not interested in skipping more
+                break
+
+
 def main(args):
     for transcript, exons in gtf_by_transcript(args.gtf):
-        print(transcript, file=sys.stderr)
-        print(json.dumps(exons, indent=True))
+        # For debuggin, we only look at DMT
+        if transcript != 'DMD-203':
+            continue
 
+        # Represent a transcript as a string of exon lenghts
+        ts = [exon_size(exon) for exon in exons]
+        for s in skippable_exons(ts):
+            # Increment by one, since gtf counts exons starting from 1
+            print(f'Skippable: {[x+1 for x in s]}')
+        exit()
         for exon in exons:
             attr = exon['attribute']
             number = attr.get('exon_number')
