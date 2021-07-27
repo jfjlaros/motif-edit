@@ -18,24 +18,43 @@ def exon_size(exon):
     end = int(exon['end'])
     return end - start + 1
 
-def main(args):
-    exons = list()
+def gtf_by_transcript(gtf):
+    # Store the first exon we get
+    for record in parse_gtf(gtf):
+        if record['feature'] == 'exon':
+            records = [record]
+            transcript_name = record['attribute']['transcript_name']
+            break
+
+    # Then we parse the whole file, yielding the result every time we arrive at
+    # a new transcript
     for record in parse_gtf(args.gtf):
         if record['feature'] == 'exon':
-            exons.append(record)
+            # If we find a new transcript
+            if transcript_name !=  record['attribute']['transcript_name']:
+                yield transcript_name, records
+                transcript_name = record['attribute']['transcript_name']
+                records = [record]
+            else:
+                records.append(record)
+    # Once we are done parsing the entire file, yield the last records
+    else:
+        yield transcript_name, records
 
-    old_name = None
-    for exon in exons:
-        attr = exon['attribute']
-        name = attr.get('transcript_name')
-        if name != old_name:
-            print('-'*20)
-            old_name = name
-        number = attr.get('exon_number')
-        size = exon_size(exon)
-        assert size > 0
-        print(f'{name}:{number}\t{size}\t{size%3}')
-    #print(json.dumps(exons, indent=True))
+import sys
+def main(args):
+    for transcript, exons in gtf_by_transcript(args.gtf):
+        print(transcript, file=sys.stderr)
+        print(json.dumps(exons, indent=True))
+
+        for exon in exons:
+            attr = exon['attribute']
+            number = attr.get('exon_number')
+            size = exon_size(exon)
+            assert size > 0
+            print(f'{transcript}:{number}\t{size}\t{size%3}')
+        print('-'*20)
+        #print(json.dumps(exons, indent=True))
 
 def parse_attribute(attribute):
     """ attribute - A semicolon-separated list of tag-value pairs """
