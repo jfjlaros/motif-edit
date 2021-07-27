@@ -127,6 +127,9 @@ def main(args):
         # Represent a transcript as a string of exon lenghts
         ts = [exon_size(exon) for exon in exons]
         for to_skip in skippable_exons(ts):
+            # If there are too many exons to skip, continue
+            if len(to_skip) > args.max_skip:
+                continue
             # Add the splice sites in bed format to skip_sites
             for index in to_skip:
                 skip_sites.add(splice_site_to_bed(exons[index]))
@@ -171,6 +174,8 @@ if __name__ == '__main__':
     parser.add_argument('--gtf', type=argparse.FileType('r'), required=True)
     parser.add_argument('--bed', type=argparse.FileType('w'), required=True)
     parser.add_argument('--tsv', type=argparse.FileType('w'), required=True)
+    parser.add_argument('--max-skip', type=int, default=3,
+                        help='maximum number of exons to skip at once')
 
     args = parser.parse_args()
 
