@@ -28,12 +28,10 @@ ANNOTATE := python annotate.py
 
 all: motif_C.bed motif_G.bed \
      lovd_C.bed clinvar_C.vcf lovd_G.bed clinvar_G.vcf \
-     intersect_lovd_C.csv intersect_lovd_G.csv \
-	 intersect_clinvar_C.csv intersect_clinvar_G.csv \
 	 merged.csv
 
 clean:
-	rm -f *.mtf *.raw *.bed *.vcf intersect*.csv
+	rm -f *.mtf *.raw *.bed *.vcf merged*.csv
 
 distclean: clean
 	rm -f $(REFERENCE)
