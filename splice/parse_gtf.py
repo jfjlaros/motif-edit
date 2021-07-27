@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-import json
 
 
 def exon_size(exon):
@@ -18,29 +17,36 @@ def exon_size(exon):
     end = int(exon['end'])
     return end - start + 1
 
+
+def usable(record):
+    """ Helper function to determine if we can use a record """
+    return (record['feature'] == 'exon' and
+            record['attribute']['transcript_biotype'] =='protein_coding')
+
+
 def gtf_by_transcript(gtf):
     # Store the first exon we get
     for record in parse_gtf(gtf):
-        if record['feature'] == 'exon':
+        if usable(record):
             records = [record]
-            transcript_name = record['attribute']['transcript_name']
+            transcript_id = record['attribute']['transcript_id']
             break
 
     # Then we parse the whole file, yielding the result every time we arrive at
     # a new transcript
     for record in parse_gtf(args.gtf):
-        if record['feature'] == 'exon':
+        if usable(record):
             # If we find a new transcript
-            current_transcript = record['attribute'].get('transcript_name')
-            if transcript_name !=  current_transcript:
-                yield transcript_name, records
-                transcript_name = current_transcript
+            current_transcript = record['attribute']['transcript_id']
+            if transcript_id !=  current_transcript:
+                yield transcript_id, records
+                transcript_id = current_transcript
                 records = [record]
             else:
                 records.append(record)
     # Once we are done parsing the entire file, yield the last records
     else:
-        yield transcript_name, records
+        yield transcript_id, records
 
 
 def skippable_exons(exons):
@@ -87,7 +93,6 @@ def splice_site_to_bed(exon):
     We assume the 5-bp motif as shown in Figure one of https://doi.org/10.1186/s13059-018-1482-5
 
     """
-    #print(json.dumps(exon, indent=True))
     chrom = exon['seqname']
 
     # gtf is 1 based, while bed is 0 based
@@ -99,7 +104,7 @@ def splice_site_to_bed(exon):
 
     # The name is the transcript name + the exon number
     attr = exon['attribute']
-    ts_name = attr.get('transcript_name')
+    ts_name = attr.get('transcript_id')
     exon_nr = attr['exon_number']
     name = f'{ts_name}:{exon_nr}'
     return (f'chr{chrom}', begin, end, name)
@@ -118,7 +123,7 @@ def main(args):
     skip_sites = set()
 
     # Write the header for the tsv file
-    header = ['gene_name', 'transcript_name', 'gene_id', 'transcript_id', 'exons']
+    header = ['gene_name', 'transcript_id', 'gene_id', 'transcript_id', 'exons']
     print(*header, sep='\t', file=args.tsv)
 
     for transcript, exons in gtf_by_transcript(args.gtf):
