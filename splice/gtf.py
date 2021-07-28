@@ -24,17 +24,10 @@ def parse_attribute(attribute):
 
 def gtf_to_json(gtf_handle):
     """ Parse a GTF file, and yield the records one by one """
-
-    # Skip the headers
-    line = next(gtf_handle)
-    if line.startswith('#'):
-        while line.startswith('#'):
-            line = next(gtf_handle)
-            continue
-    else:
-        gtf_handle.seek(0)
-
     for line in gtf_handle:
+        # Skip the headers
+        if line.startswith('#'):
+            continue
         spline = line.strip('\n').split('\t')
         record = {k:v for k, v in zip(gtf_header, spline)}
         record['attribute'] = parse_attribute(record['attribute'])
