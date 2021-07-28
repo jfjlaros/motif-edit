@@ -117,25 +117,9 @@ def splice_site_to_bed(exon):
     return (f'chr{chrom}', begin, end, name)
 
 
-def write_tsv(exons, header, handle):
-    # Most of the data we need is present in every exon
-    exon = exons[0]
-
-    # Exons is a custom field, not from the GTF
-    from_gtf = [field for field in header if field != 'exons']
-
-    data = {x:exon['attribute'][x] for x in from_gtf}
-    data['exons'] = ';'.join((exon['attribute']['exon_number'] for exon in exons))
-    print(*(data[x] for x in header), sep='\t', file=handle)
-
 def main(args):
     # The splice sites for skippable exons, in bed format
     skip_sites = set()
-
-    # Write the header for the tsv file
-    header = ['transcript_id', 'gene_id', 'transcript_id', 'exons']
-
-    print(*header, sep='\t', file=args.tsv)
 
     for transcript, exons in gtf_by_transcript(args.gtf):
         # Represent a transcript as a string of exon lenghts
@@ -148,23 +132,18 @@ def main(args):
             # Add the splice sites in bed format to skip_sites
             for index in to_skip:
                 skip_sites.add(splice_site_to_bed(exons[index]))
-            # Write the exons to the tsv file
-            skip = [exons[x] for x in to_skip]
-            write_tsv(skip, header, args.tsv)
 
     # Print the skippable splice sites, in bed format. Using the default python
     # sort on tuples gives a valid sorting for bed files
     for region in sorted(skip_sites):
-        print(*region, sep='\t', file=args.bed)
+        print(*region, sep='\t')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--gtf', type=argparse.FileType('r'), required=True)
-    parser.add_argument('--bed', type=argparse.FileType('w'), required=True)
-    parser.add_argument('--tsv', type=argparse.FileType('w'), required=True)
-    parser.add_argument('--max-skip', type=int, default=3,
+    parser.add_argument('--max-skip', type=int, default=1,
                         help='maximum number of exons to skip at once')
 
     args = parser.parse_args()
