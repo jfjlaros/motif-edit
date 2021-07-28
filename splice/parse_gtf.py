@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+from gtf import gtf_to_json
 
 
 def exon_size(exon):
@@ -19,14 +20,18 @@ def exon_size(exon):
 
 
 def usable(record):
-    """ Helper function to determine if we can use a record """
+    """ Helper function to determine if we can use a record
+
+    We are only interested in protein coding exons.
+
+    """
     return (record['feature'] == 'exon' and
             record['attribute']['transcript_biotype'] =='protein_coding')
 
 
 def gtf_by_transcript(gtf):
     # Store the first exon we get
-    for record in parse_gtf(gtf):
+    for record in gtf_to_json(gtf):
         if usable(record):
             records = [record]
             transcript_id = record['attribute']['transcript_id']
@@ -34,7 +39,7 @@ def gtf_by_transcript(gtf):
 
     # Then we parse the whole file, yielding the result every time we arrive at
     # a new transcript
-    for record in parse_gtf(args.gtf):
+    for record in gtf_to_json(args.gtf):
         if usable(record):
             # If we find a new transcript
             current_transcript = record['attribute']['transcript_id']
@@ -149,31 +154,6 @@ def main(args):
     # sort on tuples gives a valid sorting for bed files
     for region in sorted(skip_sites):
         print(*region, sep='\t', file=args.bed)
-
-def parse_attribute(attribute):
-    """ attribute - A semicolon-separated list of tag-value pairs """
-    attributes = dict()
-    for attr in attribute.split(';')[:-1]:
-        key, *value = attr.strip().split(' ')
-        attributes[key] = ' '.join(val.replace('"','') for val in value)
-    return attributes
-
-
-def parse_gtf(gtf_handle):
-    # See https://www.ensembl.org/info/website/upload/gff.html
-    gtf_header = 'seqname source feature start end score strand frame attribute'.split()
-
-    # Skip the headers
-    line = next(gtf_handle)
-    while line.startswith('#'):
-        line = next(gtf_handle)
-        continue
-
-    for line in gtf_handle:
-        spline = line.strip('\n').split('\t')
-        record = {k:v for k, v in zip(gtf_header, spline)}
-        record['attribute'] = parse_attribute(record['attribute'])
-        yield record
 
 
 if __name__ == '__main__':
