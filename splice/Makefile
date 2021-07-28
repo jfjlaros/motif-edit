@@ -15,7 +15,7 @@ REFERENCE_URL := https://hgdownload.cse.ucsc.edu/goldenPath/$(BUILD)/bigZips/$(R
 # Analysis tools.
 BEDTOOLS := bedtools
 FASTOOLS := fastools
-PARSE_GTF := python parse_gtf.py
+SKIP_EXONS := python skip_exons.py
 
 #
 # Maintenance targets.
@@ -24,7 +24,7 @@ PARSE_GTF := python parse_gtf.py
 .PHONY: all clean distclean reference gtf
 .SECONDARY:
 
-all: $(REFERENCE) $(GTF) splice.bed splice.tsv editable_splice_G.bed
+all: $(REFERENCE) $(GTF) skip_exons.bed editable_exons_G.bed
 	 
 
 clean:
@@ -53,13 +53,13 @@ $(GTF):
 #
 
 # Find the splice sites
-%.bed %.tsv: $(GTF)
-	$(PARSE_GTF) --gtf $? --bed splice.bed --tsv splice.tsv
+skip_exons.bed : $(GTF)
+	$(SKIP_EXONS) --gtf $? > $@
 
 # Find motif sites.
 motif_%.raw: $(REFERENCE) $(MOTIFS)
 	$(FASTOOLS) famotif2bed $< $@ '$(shell grep -- "^$*" $(MOTIFS) | cut -f 3)'
 
 # Find splice sites that are editable
-editable_splice_%.bed: splice.bed motif_%.raw
+editable_exons_%.bed: skip_exons.bed motif_%.raw
 	$(BEDTOOLS) intersect -a $< -b $(word 2, $^) > $@
