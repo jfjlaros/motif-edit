@@ -17,6 +17,7 @@ BEDTOOLS := bedtools
 FASTOOLS := fastools
 SKIP_EXONS := python skip_exons.py
 INTERSECT_GTF:= python intersect_gtf.py
+GTF_TO_CSV:= python gtf_to_csv.py
 
 #
 # Maintenance targets.
@@ -25,7 +26,7 @@ INTERSECT_GTF:= python intersect_gtf.py
 .PHONY: all clean distclean reference gtf
 .SECONDARY:
 
-all: $(REFERENCE) $(GTF) skip_exons.bed editable_exons_G.bed editable_exons_G.gtf
+all: $(REFERENCE) $(GTF) skip_exons.bed editable_exons_G.csv
 	 
 
 clean:
@@ -67,3 +68,6 @@ editable_exons_%.bed: skip_exons.bed motif_%.raw
 
 editable_exons_%.gtf: editable_exons_%.bed $(GTF)
 	$(INTERSECT_GTF) --bed $< --gtf $(word 2, $^) > $@
+
+editable_exons_%.csv: editable_exons_%.gtf
+	$(GTF_TO_CSV) --gtf $< > $@
