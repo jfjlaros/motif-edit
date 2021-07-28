@@ -16,6 +16,7 @@ REFERENCE_URL := https://hgdownload.cse.ucsc.edu/goldenPath/$(BUILD)/bigZips/$(R
 BEDTOOLS := bedtools
 FASTOOLS := fastools
 SKIP_EXONS := python skip_exons.py
+INTERSECT_GTF:= python intersect_gtf.py
 
 #
 # Maintenance targets.
@@ -24,7 +25,7 @@ SKIP_EXONS := python skip_exons.py
 .PHONY: all clean distclean reference gtf
 .SECONDARY:
 
-all: $(REFERENCE) $(GTF) skip_exons.bed editable_exons_G.bed
+all: $(REFERENCE) $(GTF) skip_exons.bed editable_exons_G.bed editable_exons_G.gtf
 	 
 
 clean:
@@ -63,3 +64,6 @@ motif_%.raw: $(REFERENCE) $(MOTIFS)
 # Find splice sites that are editable
 editable_exons_%.bed: skip_exons.bed motif_%.raw
 	$(BEDTOOLS) intersect -a $< -b $(word 2, $^) > $@
+
+editable_exons_%.gtf: editable_exons_%.bed $(GTF)
+	$(INTERSECT_GTF) --bed $< --gtf $(word 2, $^) > $@
