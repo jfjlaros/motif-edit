@@ -2,6 +2,7 @@
 
 import argparse
 from gtf import gtf_to_json
+from gtf import usable
 
 
 def exon_size(exon):
@@ -17,16 +18,6 @@ def exon_size(exon):
     start = int(exon['start'])
     end = int(exon['end'])
     return end - start + 1
-
-
-def usable(record):
-    """ Helper function to determine if we can use a record
-
-    We are only interested in protein coding exons.
-
-    """
-    return (record['feature'] == 'exon' and
-            record['attribute']['transcript_biotype'] =='protein_coding')
 
 
 def gtf_by_transcript(gtf):

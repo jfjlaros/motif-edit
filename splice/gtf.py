@@ -1,6 +1,16 @@
 #!/usr/bin/env python3
 
-import argparse
+# See https://www.ensembl.org/info/website/upload/gff.html
+gtf_header = 'seqname source feature start end score strand frame attribute'.split()
+
+def usable(record):
+    """ Helper function to determine if we can use a record
+
+    We are only interested in protein coding exons.
+
+    """
+    return (record['feature'] == 'exon' and
+            record['attribute']['transcript_biotype'] =='protein_coding')
 
 
 def parse_attribute(attribute):
@@ -14,8 +24,6 @@ def parse_attribute(attribute):
 
 def gtf_to_json(gtf_handle):
     """ Parse a GTF file, and yield the records one by one """
-    # See https://www.ensembl.org/info/website/upload/gff.html
-    gtf_header = 'seqname source feature start end score strand frame attribute'.split()
 
     # Skip the headers
     line = next(gtf_handle)
@@ -28,3 +36,13 @@ def gtf_to_json(gtf_handle):
         record = {k:v for k, v in zip(gtf_header, spline)}
         record['attribute'] = parse_attribute(record['attribute'])
         yield record
+
+
+def json_to_gtf(record):
+    """ Return a record in GTF format """
+
+    # First, we must package the attributes
+    attr = ''.join(f' {key} "{value}";' for key, value in record['attribute'].items())
+    # Strip the leading space
+    record['attribute'] = attr.strip(' ')
+    return '\t'.join(record[field] for field in gtf_header)
