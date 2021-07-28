@@ -27,9 +27,12 @@ def gtf_to_json(gtf_handle):
 
     # Skip the headers
     line = next(gtf_handle)
-    while line.startswith('#'):
-        line = next(gtf_handle)
-        continue
+    if line.startswith('#'):
+        while line.startswith('#'):
+            line = next(gtf_handle)
+            continue
+    else:
+        gtf_handle.seek(0)
 
     for line in gtf_handle:
         spline = line.strip('\n').split('\t')
@@ -46,3 +49,9 @@ def json_to_gtf(record):
     # Strip the leading space
     record['attribute'] = attr.strip(' ')
     return '\t'.join(record[field] for field in gtf_header)
+
+def gtf_to_csv(record, attribute_fields):
+    """ Return a record in CSV format """
+    gtf_fields = [record[field] for field in gtf_header if field != 'attribute']
+    attribute_fields = [record['attribute'].get(field, '') for field in attribute_fields]
+    return ','.join(gtf_fields + attribute_fields)
