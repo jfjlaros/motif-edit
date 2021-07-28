@@ -26,11 +26,11 @@ GTF_TO_CSV:= python gtf_to_csv.py
 .PHONY: all clean distclean reference gtf
 .SECONDARY:
 
-all: $(REFERENCE) $(GTF) skip_exons.bed editable_exons_G.csv
+all: $(REFERENCE) $(GTF) editable_exons_G.csv
 	 
 
 clean:
-	rm -f *.mtf *.raw *.bed *.vcf splice.tsv
+	rm -f *.raw *.bed editable_exons_*
 
 distclean: clean
 	rm -f $(REFERENCE)
