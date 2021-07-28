@@ -44,12 +44,6 @@ def read_bedfile(handle):
     return include
 
 
-def print_exon_gtf(record):
-    import json
-    print(json.dumps(record, indent=True))
-    print(json_to_gtf(record))
-    exit()
-
 def main(args):
     # Read the transcripts, exon_nrs from the bed file
     include = read_bedfile(args.bed)
@@ -62,7 +56,7 @@ def main(args):
             transcript_id = record['attribute']['transcript_id']
             exon_nr = record['attribute']['exon_number']
             if (transcript_id, exon_nr) in include:
-                print_exon_gtf(record)
+                print(json_to_gtf(record))
 
 
 if __name__ == '__main__':
