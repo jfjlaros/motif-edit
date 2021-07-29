@@ -27,7 +27,7 @@ def annotate(input_handle, output_handle, ref, alt, DISGENET_USER, DISGENET_PASS
         input_handle, fieldnames=['chrom', 'start', 'end'], delimiter='\t')
     output_handle.write('{}\n'.format('\t'.join([
         'chrom', 'start', 'end', 'ref', 'alt', 'alleles', 'frequencies',
-        'transcripts', 'genes', 'phenotype'])))
+        'submitterCount', 'transcripts', 'genes', 'phenotype'])))
 
     # Get the disgenet token
     token = get_token(DISGENET_USER, DISGENET_PASSWORD)
@@ -50,6 +50,7 @@ def annotate(input_handle, output_handle, ref, alt, DISGENET_USER, DISGENET_PASS
             if response.ok:
                 diseases += [x['disease_name'] for x in response.json()]
 
+        # Fetch the alleles and allele frequencies
         query = ('SELECT alleles, alleleFreqs FROM snp151 WHERE ' +
                  'chrom = "{}" AND bin IN ({}) AND chromStart = {}').format(
             line['chrom'], ', '.join(map(str, bins)), line['start'])
@@ -58,10 +59,23 @@ def annotate(input_handle, output_handle, ref, alt, DISGENET_USER, DISGENET_PASS
             lambda x: ';'.join(map(lambda y: y.decode().strip(','), x)),
             zip(*cursor))) or ['', '']
 
-        output_handle.write('{}\t{}\t{}\t{}\t{}\t{}\n'.format(
+        # Fetch the submitter counts:
+        # submitterCount	Number of distinct submitter handles for submitted SNPs for this ref SNP
+        query = ('SELECT submitterCount FROM snp151 WHERE ' +
+                 'chrom = "{}" AND bin IN ({}) AND chromStart = {}').format(
+            line['chrom'], ', '.join(map(str, bins)), line['start'])
+        cursor.execute(query)
+
+        try:
+            submitterCount = list(cursor)[0][0]
+        except IndexError:
+            submitterCount = ''
+
+        output_handle.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(
             '\t'.join(line.values()),
             ref, alt,
             '\t'.join(result),
+            submitterCount,
             '\t'.join(map(lambda x: ','.join(x), names)),
             ';'.join(diseases)))
 
