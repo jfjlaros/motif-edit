@@ -85,8 +85,8 @@ def skippable_exons(exons):
 def splice_site_to_bed(exon):
     """ Return the splice acceptor site for exon, in bed format
 
-    We want to edit the highly conserved G in the splice acceptor site directly
-    before the start of the exon.
+    We only want to edit the highly conserved AG motif in the splice acceptor,
+    directly before the start of the exon.
 
     See Figure 1 of Gapinske2018: https://doi.org/10.1186/s13059-018-1482-5
 
@@ -94,11 +94,14 @@ def splice_site_to_bed(exon):
     chrom = exon['seqname']
 
     # gtf is 1 based, while bed is 0 based
-    # And the splice acceptor site starts 2bp before the exon itself
-    begin = int(exon['start']) - 2
+    bed_begin = int(exon['start']) - 1
 
-    # The splice acceptor site is 5 bp, see reference above
-    end = begin + 1
+    # The splice acceptor site starts 2bp before the exon itself
+    begin = bed_begin - 2
+
+    # We (only) look at the two most conserved bp at the start of the splice
+    # acceptor site
+    end = begin + 2
 
     # The name is the transcript name + the exon number
     attr = exon['attribute']
