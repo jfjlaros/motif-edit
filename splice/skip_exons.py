@@ -103,6 +103,9 @@ def splice_site_to_bed(exon):
     # acceptor site
     end = begin + 2
 
+    # The end is non-inclusive in bed
+    end += 1
+
     # The name is the transcript name + the exon number
     attr = exon['attribute']
     ts_name = attr['transcript_id']

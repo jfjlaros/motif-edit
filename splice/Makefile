@@ -30,7 +30,7 @@ all: $(REFERENCE) $(GTF) motif_A.raw motif_T.raw editable_exons.csv
 	 
 
 clean:
-	rm -f *.raw *.bed editable_exons_*
+	rm -f *.raw *.bed editable_exons*
 
 distclean: clean
 	rm -f $(REFERENCE)
