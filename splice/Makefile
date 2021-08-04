@@ -5,7 +5,7 @@
 # Reference data.
 BUILD := hg38
 GTF := Homo_sapiens.GRCh38.104.gtf
-MOTIFS := ABEmax_strong.tsv
+MOTIFS := Cas12f1-ABE.tsv
 REFERENCE := $(BUILD).fa
 
 # Reference data sources.
