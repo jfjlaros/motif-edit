@@ -2,12 +2,21 @@ from argparse import ArgumentParser, FileType, RawDescriptionHelpFormatter
 from binning import containing_bins
 from csv import DictReader
 from mysql import connector
-from requests import request
+from requests import request, Session
 
 from sys import stdout
 
 
-def annotate(input_handle, output_handle, ref, alt):
+def get_token(email, password):
+    api_host = 'https://www.disgenet.org/api'
+    s = Session()
+
+    payload = {'email': email, 'password': password}
+    r = s.post(f'{api_host}/auth/', data=payload)
+    if (r.status_code == 200):
+        return r.json()['token']
+
+def annotate(input_handle, output_handle, ref, alt, DISGENET_USER, DISGENET_PASSWORD):
     connection = connector.connect(
         user='genome', host='genome-euro-mysql.soe.ucsc.edu', port=3306,
         database='hg38')
@@ -18,7 +27,14 @@ def annotate(input_handle, output_handle, ref, alt):
         input_handle, fieldnames=['chrom', 'start', 'end'], delimiter='\t')
     output_handle.write('{}\n'.format('\t'.join([
         'chrom', 'start', 'end', 'ref', 'alt', 'alleles', 'frequencies',
-        'transcripts', 'genes', 'phenotype'])))
+        'submitterCount', 'transcripts', 'genes', 'phenotype'])))
+
+    # Get the disgenet token
+    token = get_token(DISGENET_USER, DISGENET_PASSWORD)
+
+    session = Session()
+    session.headers.update({'Authorization': f'Bearer {token}'})
+
     for line in reader:
         bins = containing_bins(int(line['start']))
         query = ('SELECT name, name2 from refGene WHERE ' +
@@ -30,11 +46,11 @@ def annotate(input_handle, output_handle, ref, alt):
 
         diseases = []
         for name in names[1]:
-            response = request(
-                'GET', 'https://www.disgenet.org/api/gda/gene/{}'.format(name))
+            response = session.get(f'https://www.disgenet.org/api/gda/gene/{name}')
             if response.ok:
                 diseases += [x['disease_name'] for x in response.json()]
 
+        # Fetch the alleles and allele frequencies
         query = ('SELECT alleles, alleleFreqs FROM snp151 WHERE ' +
                  'chrom = "{}" AND bin IN ({}) AND chromStart = {}').format(
             line['chrom'], ', '.join(map(str, bins)), line['start'])
@@ -43,10 +59,23 @@ def annotate(input_handle, output_handle, ref, alt):
             lambda x: ';'.join(map(lambda y: y.decode().strip(','), x)),
             zip(*cursor))) or ['', '']
 
-        output_handle.write('{}\t{}\t{}\t{}\t{}\t{}\n'.format(
+        # Fetch the submitter counts:
+        # submitterCount	Number of distinct submitter handles for submitted SNPs for this ref SNP
+        query = ('SELECT submitterCount FROM snp151 WHERE ' +
+                 'chrom = "{}" AND bin IN ({}) AND chromStart = {}').format(
+            line['chrom'], ', '.join(map(str, bins)), line['start'])
+        cursor.execute(query)
+
+        try:
+            submitterCount = list(cursor)[0][0]
+        except IndexError:
+            submitterCount = ''
+
+        output_handle.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(
             '\t'.join(line.values()),
             ref, alt,
             '\t'.join(result),
+            submitterCount,
             '\t'.join(map(lambda x: ','.join(x), names)),
             ';'.join(diseases)))
 
@@ -64,6 +93,8 @@ def main():
         type=FileType('w'), default='-', help='file name')
     parser.add_argument('ref', metavar='REF', type=str, help='reference')
     parser.add_argument('alt', metavar='ALT', type=str, help='alternative')
+    parser.add_argument('DISGENET_USER', type=str, help='username for disgenet')
+    parser.add_argument('DISGENET_PASSWORD', type=str, help='password for disgenet')
 
     args = parser.parse_args()
 
